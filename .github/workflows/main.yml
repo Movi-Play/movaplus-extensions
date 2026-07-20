@@ -1,1 +1,55 @@
+name: Build extension
 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar Android SDK command-line tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk/cmdline-tools
+          curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+
+      - name: Instalar build-tools + android.jar
+        run: |
+          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager \
+            --sdk_root=$HOME/android-sdk "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Compilar (.java -> .class)
+        run: |
+          ANDROID_JAR=$HOME/android-sdk/platforms/android-34/android.jar
+          mkdir -p out/classes
+          find src/main/java -name "*.java" > sources.txt
+          javac -cp "$ANDROID_JAR" -d out/classes @sources.txt
+
+      - name: Convertir a dex y empaquetar el .jar final
+        run: |
+          D8=$HOME/android-sdk/build-tools/34.0.0/d8
+          mkdir -p out/dex
+          "$D8" --output out/dex $(find out/classes -name "*.class")
+          mkdir -p dist
+          cd out/dex && jar cf ../../dist/cuevana3-v${GITHUB_RUN_NUMBER}.jar classes.dex
+
+      - name: Publicar como GitHub Release (link estable y público)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Cuevana3 v${{ github.run_number }}"
+          files: dist/cuevana3-v${{ github.run_number }}.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
