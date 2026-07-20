@@ -6,7 +6,7 @@
       "name": "Cuevana3",
       "version": 1,
       "className": "com.dex.streamhub.extensions.providers.cuevana.CuevanaExtension",
-      "downloadUrl": "https://raw.githubusercontent.com/TU_USUARIO/movaplus-extensions/builds/cuevana3-v1.jar",
+      "downloadUrl": "https://raw.githubusercontent.com/Movi-Play/movaplus-extensions/builds/cuevana3-v1.jar",
       "iconUrl": "https://cuevana3.sc/favicon.ico",
       "description": "Catálogo y streams de Cuevana3"
     }
